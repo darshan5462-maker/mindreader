@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MINDREADER — 1 to 30</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #02040a;
+  --panel: #080f1e;
+  --card: #0c1628;
+  --border: #162848;
+  --c1: #ff3cac;
+  --c2: #00f5d4;
+  --c3: #ffe03c;
+  --c4: #7b5ea7;
+  --c5: #ff6b35;
+  --text: #e8f4ff;
+  --muted: #3a6080;
+  --white: #ffffff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+  padding: 20px 16px;
+  position: relative;
+}
+
+/* ---- BACKGROUND MESH ---- */
+.bg-mesh {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(255,60,172,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 85% 80%, rgba(0,245,212,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(123,94,167,0.04) 0%, transparent 70%);
+}
+
+/* animated hex grid */
+.hex-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  opacity: 0.06;
+  background-image:
+    repeating-linear-gradient(60deg, var(--c2) 0, var(--c2) 1px, transparent 0, transparent 50%),
+    repeating-linear-gradient(120deg, var(--c1) 0, var(--c1) 1px, transparent 0, transparent 50%),
+    repeating-linear-gradient(180deg, var(--c4) 0, var(--c4) 1px, transparent 0, transparent 50%);
+  background-size: 40px 70px;
+  animation: hexDrift 20s linear infinite;
+}
+@keyframes hexDrift { from { background-position: 0 0; } to { background-position: 40px 70px; } }
+
+/* ---- WRAPPER ---- */
+.wrapper {
+  position: relative; z-index: 10;
+  width: 100%; max-width: 560px;
+}
+
+/* ---- HEADER ---- */
+.hdr {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: slideDown .7s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes slideDown { from { opacity:0; transform:translateY(-28px); } to { opacity:1; transform:translateY(0); } }
+
+.hdr-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+  color: var(--c2);
+  background: rgba(0,245,212,.08);
+  border: 1px solid rgba(0,245,212,.2);
+  padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
+}
+.hdr-badge::before { content: '◈'; font-size: 9px; }
+
+.hdr h1 {
+  font-size: clamp(36px,9vw,58px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: .95;
+  color: var(--white);
+  position: relative;
+}
+.hdr h1 .stroke {
+  -webkit-text-stroke: 2px var(--c1);
+  color: transparent;
+}
+.hdr h1 .fill { color: var(--white); }
+
+.hdr .sub {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* ---- CARD ---- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.03) inset,
+    0 40px 80px rgba(0,0,0,.5);
+}
+
+/* top shimmer line */
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 5%, var(--c1) 30%, var(--c2) 70%, transparent 95%);
+  opacity: .5;
+}
+
+/* ---- STEP SYSTEM ---- */
+.step { display: none; }
+.step.active {
+  display: block;
+  animation: stepIn .45s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes stepIn { from { opacity:0; transform:translateY(16px) scale(.98); } to { opacity:1; transform:none; } }
+
+/* ---- PROGRESS ---- */
+.prog-wrap { margin-bottom: 24px; }
+.prog-row {
+  display: flex; gap: 5px; margin-bottom: 8px;
+}
+.prog-seg {
+  flex: 1; height: 4px; border-radius: 4px;
+  background: var(--border);
+  transition: all .4s ease;
+  position: relative; overflow: hidden;
+}
+.prog-seg.done {
+  background: var(--c2);
+  box-shadow: 0 0 10px rgba(0,245,212,.5);
+}
+.prog-seg.active {
+  background: var(--border);
+}
+.prog-seg.active::after {
+  content: '';
+  position: absolute; top:0; left:0; width:60%; height:100%;
+  background: var(--c1);
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(255,60,172,.8);
+  animation: segRun 1.4s ease-in-out infinite;
+}
+@keyframes segRun {
+  0% { left:-60%; }
+  100% { left:110%; }
+}
+.prog-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; color: var(--muted);
+  text-transform: uppercase;
+  display: flex; justify-content: space-between;
+}
+.prog-label span { color: var(--c1); }
+
+/* ---- INTRO ---- */
+.intro-orb {
+  width: 90px; height: 90px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0%, var(--c2) 30%, var(--c4) 70%, #000 100%);
+  box-shadow:
+    0 0 0 12px rgba(0,245,212,.06),
+    0 0 0 24px rgba(0,245,212,.03),
+    0 0 60px rgba(0,245,212,.3);
+  animation: orbFloat 4s ease-in-out infinite, orbGlow 2s ease-in-out infinite alternate;
+  position: relative;
+}
+.intro-orb::after {
+  content: '';
+  position: absolute; inset: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.4), transparent 60%);
+}
+@keyframes orbFloat { 0%,100%{transform:translateY(0) rotate(0);} 50%{transform:translateY(-10px) rotate(5deg);} }
+@keyframes orbGlow { from{box-shadow:0 0 0 12px rgba(0,245,212,.06),0 0 60px rgba(0,245,212,.3);} to{box-shadow:0 0 0 18px rgba(255,60,172,.08),0 0 80px rgba(255,60,172,.4);} }
+
+.intro-title {
+  font-size: 22px; font-weight: 800;
+  text-align: center; margin-bottom: 10px;
+  color: var(--white);
+}
+.intro-body {
+  text-align: center; color: var(--muted);
+  font-size: 14px; line-height: 1.7; margin-bottom: 18px;
+}
+.range-tag {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin: 0 auto 24px;
+}
+.range-tag .pill {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px; font-weight: 700;
+  padding: 8px 20px; border-radius: 30px;
+  background: rgba(255,60,172,.12);
+  border: 1px solid rgba(255,60,172,.35);
+  color: var(--c1);
+  box-shadow: 0 0 20px rgba(255,60,172,.15);
+}
+.range-tag .arrow { color: var(--muted); font-size: 20px; }
+
+.btn-start {
+  width: 100%;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 3px;
+  padding: 16px; border: none; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(135deg, #ff3cac 0%, #7b5ea7 50%, #00f5d4 100%);
+  background-size: 200% 200%;
+  color: #02040a;
+  animation: gradShift 3s ease infinite;
+  box-shadow: 0 4px 30px rgba(255,60,172,.4);
+  transition: transform .2s, box-shadow .2s;
+  text-transform: uppercase;
+}
+.btn-start:hover { transform: translateY(-3px); box-shadow: 0 8px 40px rgba(255,60,172,.6); }
+@keyframes gradShift { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+
+/* ---- QUESTION HEADER ---- */
+.q-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; letter-spacing: 4px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.q-eyebrow::before {
+  content: '';
+  width: 20px; height: 1px; background: var(--muted);
+}
+
+.q-title {
+  font-size: 19px; font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.q-sub {
+  font-size: 13px; color: var(--muted); margin-bottom: 20px;
+}
+
+/* ---- NUMBER GRID ---- */
+.num-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 7px;
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 22px;
+  position: relative;
+  border: 1px solid rgba(255,255,255,.04);
+  background: rgba(255,255,255,.015);
+}
+.num-grid::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: 14px;
+  pointer-events: none;
+}
+
+.chip {
+  font-family: 'Space Mono', monospace;
+  font-size: 14px; font-weight: 700;
+  height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+  transition: transform .18s, box-shadow .18s;
+  animation: chipPop .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* Each layer gets a distinct color scheme */
+.layer-1 .chip { background: rgba(255,60,172,.1); border: 1px solid rgba(255,60,172,.3); color: var(--c1); }
+.layer-1 .chip:hover { transform: scale(1.12) rotate(-2deg); box-shadow: 0 0 20px rgba(255,60,172,.5); }
+
+.layer-2 .chip { background: rgba(0,245,212,.08); border: 1px solid rgba(0,245,212,.25); color: var(--c2); }
+.layer-2 .chip:hover { transform: scale(1.12) rotate(2deg); box-shadow: 0 0 20px rgba(0,245,212,.4); }
+
+.layer-3 .chip { background: rgba(255,224,60,.08); border: 1px solid rgba(255,224,60,.25); color: var(--c3); }
+.layer-3 .chip:hover { transform: scale(1.12) rotate(-2deg); box-shadow: 0 0 20px rgba(255,224,60,.4); }
+
+.layer-4 .chip { background: rgba(123,94,167,.15); border: 1px solid rgba(123,94,167,.35); color: #b09fd6; }
+.layer-4 .chip:hover { transform: scale(1.12) rotate(2deg); box-shadow: 0 0 20px rgba(123,94,167,.5); }
+
+.layer-5 .chip { background: rgba(255,107,53,.1); border: 1px solid rgba(255,107,53,.3); color: var(--c5); }
+.layer-5 .chip:hover { transform: scale(1.12) rotate(-2deg); box-shadow: 0 0 20px rgba(255,107,53,.4); }
+
+@keyframes chipPop { from{opacity:0;transform:scale(.5) rotate(-8deg);} to{opacity:1;transform:scale(1) rotate(0);} }
+
+/* ---- YES / NO ---- */
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.yn-btn {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 3px;
+  padding: 15px 10px;
+  border: none; border-radius: 12px; cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s ease;
+  position: relative; overflow: hidden;
+}
+.yn-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.yn-btn:hover::before { opacity: 1; }
+.yn-btn:active { transform: scale(.97); }
+
+.btn-y {
+  background: rgba(0,245,212,.08);
+  border: 1.5px solid rgba(0,245,212,.4);
+  color: var(--c2);
+  box-shadow: 0 0 0 0 rgba(0,245,212,.3);
+}
+.btn-y::before { background: rgba(0,245,212,.07); }
+.btn-y:hover { box-shadow: 0 0 28px rgba(0,245,212,.4), 0 4px 16px rgba(0,245,212,.2); transform: translateY(-3px); }
+
+.btn-n {
+  background: rgba(255,60,172,.08);
+  border: 1.5px solid rgba(255,60,172,.4);
+  color: var(--c1);
+  box-shadow: 0 0 0 0 rgba(255,60,172,.3);
+}
+.btn-n::before { background: rgba(255,60,172,.07); }
+.btn-n:hover { box-shadow: 0 0 28px rgba(255,60,172,.4), 0 4px 16px rgba(255,60,172,.2); transform: translateY(-3px); }
+
+.btn-y .btn-icon, .btn-n .btn-icon { display: block; font-size: 18px; margin-bottom: 4px; }
+
+/* ---- THINKING ---- */
+.think-wrap {
+  text-align: center;
+  padding: 30px 0;
+}
+.think-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; letter-spacing: 5px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 30px;
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+
+.think-orb {
+  width: 70px; height: 70px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  border: 2px solid var(--c1);
+  position: relative;
+  animation: spin 2s linear infinite;
+  box-shadow: 0 0 30px rgba(255,60,172,.3);
+}
+.think-orb::before {
+  content: '';
+  position: absolute; inset: 6px; border-radius: 50%;
+  border: 2px solid var(--c2);
+  animation: spin 1.4s linear infinite reverse;
+  box-shadow: 0 0 20px rgba(0,245,212,.3);
+}
+.think-orb::after {
+  content: '';
+  position: absolute; inset: 14px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,245,212,.3), rgba(255,60,172,.2));
+  animation: orbGlow 1s ease-in-out infinite alternate;
+}
+@keyframes spin { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+
+.think-bar {
+  width: 200px; height: 2px; margin: 0 auto;
+  background: var(--border);
+  border-radius: 2px; overflow: hidden;
+}
+.think-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  border-radius: 2px;
+  animation: barFill 2s ease forwards;
+}
+@keyframes barFill { from{width:0%;} to{width:100%;} }
+
+/* ---- RESULT ---- */
+.result-wrap { text-align: center; padding: 10px 0; }
+
+.result-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; letter-spacing: 5px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 16px;
+}
+
+.result-num-outer {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.result-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  animation: ringOut 1.6s ease-out forwards;
+}
+.result-ring:nth-child(1) { border-color: rgba(255,60,172,.6); animation-delay: 0s; }
+.result-ring:nth-child(2) { border-color: rgba(0,245,212,.5); animation-delay: .3s; }
+.result-ring:nth-child(3) { border-color: rgba(255,224,60,.4); animation-delay: .6s; }
+@keyframes ringOut {
+  from { width: 20px; height: 20px; opacity: .9; }
+  to { width: 260px; height: 260px; opacity: 0; }
+}
+
+.result-num {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(88px, 22vw, 120px);
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--c1) 0%, var(--white) 45%, var(--c2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(255,60,172,.5));
+  animation: numBoom .7s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes numBoom { from{opacity:0;transform:scale(.2) rotate(20deg);} to{opacity:1;transform:none;} }
+
+.result-msg {
+  font-size: 20px; font-weight: 800;
+  color: var(--white); margin-bottom: 6px;
+}
+.result-sub {
+  font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6;
+}
+.result-bits {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.bit-chip {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; padding: 5px 12px; border-radius: 6px;
+  opacity: .5;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: all .3s;
+}
+.bit-chip.on {
+  opacity: 1;
+  background: rgba(0,245,212,.1);
+  border-color: var(--c2);
+  color: var(--c2);
+  box-shadow: 0 0 12px rgba(0,245,212,.3);
+}
+
+.btn-again {
+  width: 100%;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px; font-weight: 700; letter-spacing: 4px;
+  padding: 15px; border-radius: 12px; cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted); text-transform: uppercase;
+  transition: all .25s;
+}
+.btn-again:hover {
+  border-color: var(--c1); color: var(--c1);
+  box-shadow: 0 0 20px rgba(255,60,172,.2);
+  transform: translateY(-2px);
+}
+
+/* ---- FOOTER ---- */
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; color: rgba(58,96,128,.4);
+  text-transform: uppercase;
+  animation: slideDown .8s .3s both;
+}
+
+/* ---- PARTICLE CANVAS ---- */
+#particles {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 1;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+<div class="hex-bg"></div>
+<canvas id="particles"></canvas>
+
+<div class="wrapper">
+
+  <div class="hdr">
+    <div class="hdr-badge">Telepathic Engine v3.0</div>
+    <h1><span class="stroke">MIND</span><span class="fill">READER</span></h1>
+    <div class="sub">Numbers 1 – 30 · Can we decode your mind?</div>
+  </div>
+
+  <div class="card">
+
+    <!-- INTRO -->
+    <div class="step active" id="s-intro">
+      <div class="intro-orb"></div>
+      <div class="intro-title">Think of a Secret Number</div>
+      <div class="intro-body">
+        Our 5-layer neural scan will analyse your choices<br>
+        and reveal exactly what you're thinking.
+      </div>
+      <div class="range-tag">
+        <div class="pill">1</div>
+        <div class="arrow">⟶</div>
+        <div class="pill">30</div>
+      </div>
+      <button class="btn-start" onclick="startGame()">⚡ INITIATE MIND SCAN</button>
+    </div>
+
+    <!-- QUESTION TEMPLATE (built dynamically) -->
+    <div class="step" id="s-q">
+      <div class="prog-wrap">
+        <div class="prog-row" id="prog-row"></div>
+        <div class="prog-label">
+          <span id="prog-step-label">Layer 1 / 5</span>
+          <span id="prog-pct">20%</span>
+        </div>
+      </div>
+
+      <div class="q-eyebrow" id="q-eyebrow">Neural Layer 01</div>
+      <div class="q-title">Is your number in this set?</div>
+      <div class="q-sub">Look carefully — find your number below</div>
+
+      <div class="num-grid" id="num-grid"></div>
+
+      <div class="btn-row">
+        <button class="yn-btn btn-y" onclick="answer(true)">
+          <span class="btn-icon">✓</span>YES
+        </button>
+        <button class="yn-btn btn-n" onclick="answer(false)">
+          <span class="btn-icon">✗</span>NO
+        </button>
+      </div>
+    </div>
+
+    <!-- THINKING -->
+    <div class="step" id="s-think">
+      <div class="think-wrap">
+        <div class="think-title">Decoding your neural signature…</div>
+        <div class="think-orb"></div>
+        <div class="think-bar"><div class="think-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="step" id="s-result">
+      <div class="result-wrap">
+        <div class="result-eyebrow">Your number was…</div>
+        <div class="result-num-outer">
+          <div class="result-ring"></div>
+          <div class="result-ring"></div>
+          <div class="result-ring"></div>
+          <div class="result-num" id="result-num">0</div>
+        </div>
+        <div class="result-msg">🎯 Mind Scan Successful!</div>
+        <div class="result-sub">5 layers. Zero mistakes.<br>Your thoughts are an open book.</div>
+        <div class="result-bits" id="result-bits"></div>
+        <button class="btn-again" onclick="resetGame()">↺ SCAN ANOTHER MIND</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">Powered by Quantum Cognition Engine · v3.0.1</div>
+</div>
+
+<script>
+// =============================================
+// LOGIC: 5-bit binary, numbers 1–30
+// Bit values: 1, 2, 4, 8, 16
+// Each number 1–30 appears in exactly the sets
+// corresponding to its binary 1-bits.
+// =============================================
+
+const BIT_VALUES = [1, 2, 4, 8, 16];
+const LAYER_COLORS = ['layer-1','layer-2','layer-3','layer-4','layer-5'];
+const LAYER_NAMES = ['Alpha Wave','Beta Pulse','Gamma Surge','Delta Core','Theta Deep'];
+const LAYER_EMOJIS = ['🔴','🟢','🟡','🟣','🟠'];
+
+// Build the 5 sets
+function buildSets() {
+  return BIT_VALUES.map(bit => {
+    let arr = [];
+    for (let n = 1; n <= 30; n++) {
+      if (n & bit) arr.push(n);
+    }
+    return arr;
+  });
+}
+const SETS = buildSets();
+
+// Fisher-Yates shuffle
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let currentQ = 0;
+let score = 0;
+
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buildProgressBar(current) {
+  const row = document.getElementById('prog-row');
+  row.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'prog-seg' + (i < current ? ' done' : i === current ? ' active' : '');
+    row.appendChild(seg);
+  }
+  document.getElementById('prog-step-label').textContent = `Layer ${current+1} / 5`;
+  document.getElementById('prog-pct').textContent = `${Math.round(((current)/5)*100)}%`;
+}
+
+function buildGrid(qIndex) {
+  const grid = document.getElementById('num-grid');
+  grid.innerHTML = '';
+  grid.className = 'num-grid ' + LAYER_COLORS[qIndex];
+
+  const nums = shuffle(SETS[qIndex]);
+  nums.forEach((n, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = n;
+    chip.style.animationDelay = (i * 0.04) + 's';
+    grid.appendChild(chip);
+  });
+
+  document.getElementById('q-eyebrow').textContent =
+    `${LAYER_EMOJIS[qIndex]} ${LAYER_NAMES[qIndex]} · Scan ${qIndex+1} of 5`;
+}
+
+function startGame() {
+  currentQ = 0;
+  score = 0;
+  buildProgressBar(0);
+  buildGrid(0);
+  showStep('s-q');
+}
+
+function answer(yes) {
+  if (yes) score += BIT_VALUES[currentQ];
+  currentQ++;
+
+  if (currentQ < 5) {
+    buildProgressBar(currentQ);
+    buildGrid(currentQ);
+    // re-trigger animation
+    const sq = document.getElementById('s-q');
+    sq.classList.remove('active');
+    void sq.offsetWidth;
+    sq.classList.add('active');
+  } else {
+    showStep('s-think');
+    // reset think bar animation
+    const bar = document.querySelector('.think-bar-fill');
+    bar.style.animation = 'none'; void bar.offsetWidth;
+    bar.style.animation = 'barFill 2s ease forwards';
+    setTimeout(showResult, 2100);
+  }
+}
+
+function showResult() {
+  document.getElementById('result-num').textContent = score;
+
+  // re-trigger animations
+  const numEl = document.getElementById('result-num');
+  numEl.style.animation = 'none'; void numEl.offsetWidth;
+  numEl.style.animation = 'numBoom .7s cubic-bezier(.34,1.56,.64,1) both';
+
+  document.querySelectorAll('.result-ring').forEach(r => {
+    r.style.animation = 'none'; void r.offsetWidth; r.style.animation = '';
+  });
+
+  // bit breakdown
+  const bitsEl = document.getElementById('result-bits');
+  bitsEl.innerHTML = '';
+  BIT_VALUES.forEach((v, i) => {
+    const bc = document.createElement('div');
+    bc.className = 'bit-chip' + ((score & v) ? ' on' : '');
+    bc.textContent = `${LAYER_NAMES[i].split(' ')[0]}: ${(score & v) ? '+'+v : '0'}`;
+    bitsEl.appendChild(bc);
+  });
+
+  showStep('s-result');
+}
+
+function resetGame() {
+  showStep('s-intro');
+}
+
+// =============================================
+// PARTICLES
+// =============================================
+(function() {
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COLORS = ['rgba(255,60,172,', 'rgba(0,245,212,', 'rgba(255,224,60,', 'rgba(123,94,167,'];
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.r = Math.random() * 1.5 + .3;
+      this.c = COLORS[Math.floor(Math.random() * COLORS.length)];
+      this.a = Math.random() * .5 + .1;
+      this.vx = (Math.random() - .5) * .3;
+      this.vy = -Math.random() * .4 - .1;
+      this.life = 1;
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.c + this.a + ')';
+      ctx.fill();
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      this.a -= .0008;
+      if (this.a <= 0 || this.y < -10) this.reset();
+    }
+  }
+
+  for (let i = 0; i < 80; i++) particles.push(new Particle());
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+
+</body>
+</html>
