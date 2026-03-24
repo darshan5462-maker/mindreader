@@ -452,19 +452,21 @@ body {
 }
 .bit-chip {
   font-family: 'Space Mono', monospace;
-  font-size: 11px; padding: 5px 12px; border-radius: 6px;
-  opacity: .5;
+  font-size: 11px; padding: 6px 14px; border-radius: 20px;
+  opacity: 0;
   border: 1px solid var(--border);
   color: var(--muted);
-  transition: all .3s;
+  transition: all .4s;
 }
 .bit-chip.on {
   opacity: 1;
-  background: rgba(0,245,212,.1);
-  border-color: var(--c2);
+  background: linear-gradient(135deg, rgba(255,60,172,.12), rgba(0,245,212,.12));
+  border-color: rgba(0,245,212,.4);
   color: var(--c2);
-  box-shadow: 0 0 12px rgba(0,245,212,.3);
+  box-shadow: 0 0 14px rgba(0,245,212,.25);
+  animation: badgePop .5s cubic-bezier(.34,1.56,.64,1) both;
 }
+@keyframes badgePop { from{opacity:0;transform:scale(.6);} to{opacity:1;transform:scale(1);} }
 
 .btn-again {
   width: 100%;
@@ -600,6 +602,7 @@ const BIT_VALUES = [1, 2, 4, 8, 16];
 const LAYER_COLORS = ['layer-1','layer-2','layer-3','layer-4','layer-5'];
 const LAYER_NAMES = ['Alpha Wave','Beta Pulse','Gamma Surge','Delta Core','Theta Deep'];
 const LAYER_EMOJIS = ['🔴','🟢','🟡','🟣','🟠'];
+const SCAN_LABELS = ['Quantum Scan I','Quantum Scan II','Quantum Scan III','Quantum Scan IV','Quantum Scan V'];
 
 // Build the 5 sets
 function buildSets() {
@@ -639,7 +642,7 @@ function buildProgressBar(current) {
     seg.className = 'prog-seg' + (i < current ? ' done' : i === current ? ' active' : '');
     row.appendChild(seg);
   }
-  document.getElementById('prog-step-label').textContent = `Layer ${current+1} / 5`;
+  document.getElementById('prog-step-label').textContent = `Scan ${current+1} of 5`;
   document.getElementById('prog-pct').textContent = `${Math.round(((current)/5)*100)}%`;
 }
 
@@ -658,7 +661,7 @@ function buildGrid(qIndex) {
   });
 
   document.getElementById('q-eyebrow').textContent =
-    `${LAYER_EMOJIS[qIndex]} ${LAYER_NAMES[qIndex]} · Scan ${qIndex+1} of 5`;
+    `🔮 Neural Scan ${qIndex+1} of 5`;
 }
 
 function startGame() {
@@ -703,13 +706,15 @@ function showResult() {
     r.style.animation = 'none'; void r.offsetWidth; r.style.animation = '';
   });
 
-  // bit breakdown
+  // show fun accuracy stars
   const bitsEl = document.getElementById('result-bits');
   bitsEl.innerHTML = '';
-  BIT_VALUES.forEach((v, i) => {
+  const msgs = ['🌀 Deep Scan Complete','⚡ 100% Accuracy','🔒 Mind Locked','✨ Zero Error','🧬 Code Cracked'];
+  msgs.forEach((m, i) => {
     const bc = document.createElement('div');
-    bc.className = 'bit-chip' + ((score & v) ? ' on' : '');
-    bc.textContent = `${LAYER_NAMES[i].split(' ')[0]}: ${(score & v) ? '+'+v : '0'}`;
+    bc.className = 'bit-chip on';
+    bc.textContent = m;
+    bc.style.animationDelay = (i * 0.12) + 's';
     bitsEl.appendChild(bc);
   });
 
